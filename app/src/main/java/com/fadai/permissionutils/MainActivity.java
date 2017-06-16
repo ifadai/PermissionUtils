@@ -58,6 +58,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 new PermissionUtils.PermissionRequestSuccessCallBack() {
             @Override
             public void onHasPermission() {
+                // 权限已被授予
                 toCamera();
             }
         });
@@ -95,6 +96,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 new PermissionUtils.PermissionRequestSuccessCallBack() {
             @Override
             public void onHasPermission() {
+                // 权限已被授予
                 toCamera();
             }
         });
@@ -131,6 +133,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         startActivity(intent);
     }
 
+
+
     /**
      * 解释权限的dialog
      *
@@ -164,23 +168,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         switch (requestCode) {
             case REQUEST_CODE_CAMERA:
-                PermissionUtils.onRequestPermissionResult(mContext, PERMISSION_CAMERA, grantResults, new PermissionUtils.PermissionCheckCallBack() {
-                    @Override
-                    public void onHasPermission() {
-                        toCamera();
-                    }
-
-                    @Override
-                    public void onUserHasAlreadyTurnedDown(String... permission) {
-                        Toast.makeText(mContext, "我们需要"+Arrays.toString(permission)+"权限", Toast.LENGTH_SHORT).show();
-                    }
-
-                    @Override
-                    public void onUserHasAlreadyTurnedDownAndDontAsk(String... permission) {
-                        Toast.makeText(mContext, "我们需要"+Arrays.toString(permission)+"权限", Toast.LENGTH_SHORT).show();
-                        showToAppSettingDialog();
-                    }
-                });
+                if(PermissionUtils.isPermissionRequestSuccess(grantResults))
+                {
+                    // 权限申请成功
+                    toCamera();
+                } else {
+                    Toast.makeText(mContext,"打开相机失败",Toast.LENGTH_SHORT).show();
+                }
                 break;
             case REQUEST_CODE_PERMISSIONS:
                 PermissionUtils.onRequestMorePermissionsResult(mContext, PERMISSIONS, new PermissionUtils.PermissionCheckCallBack() {
@@ -204,6 +198,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         }
     }
+
 
 
 }
