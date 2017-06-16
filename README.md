@@ -1,19 +1,8 @@
 # PermissionUtils
 Android 运行时权限工具类
-# 使用：
+## 简洁版申请权限
 
-```
- // 相机权限、多个权限
-    private final String PERMISSION_CAMERA = Manifest.permission.CAMERA;
-    private final String[] PERMISSIONS = new String[]{Manifest.permission.READ_EXTERNAL_STORAGE
-            , Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.READ_CALENDAR};
-
-    // 打开相机请求Code，多个权限请求Code
-    private final int REQUEST_CODE_CAMERA = 1,REQUEST_CODE_PERMISSIONS=2;
-```
-
-###  申请一个权限：
-
+####  申请一个权限：
 ```
     PermissionUtils.checkAndRequestPermission(mContext, PERMISSION_CAMERA, REQUEST_CODE_CAMERA,
                 new PermissionUtils.PermissionRequestSuccessCallBack() {
@@ -24,8 +13,17 @@ Android 运行时权限工具类
             }
         });
 ```
-### 申请多个权限
+#### 然后在onRequestPermissionsResult中：
 
+```
+if(PermissionUtils.isPermissionRequestSuccess(grantResults))
+                {
+                    // 权限申请成功
+                    toCamera();
+                }
+```
+
+#### 什么？要同时申请多个权限？
 ```
     PermissionUtils.checkAndRequestMorePermissions(mContext, PERMISSIONS, REQUEST_CODE_PERMISSIONS,
                 new PermissionUtils.PermissionRequestSuccessCallBack() {
@@ -36,8 +34,13 @@ Android 运行时权限工具类
             }
         });
 ```
-### 自定义申请权限
-
+#### 当然上面这些都不是申请权限的正确姿势，理想的姿势应该是：
+- 第一次申请权限：按照正常流程走；
+- 如果用户第一次拒绝了权限申请，第二次申请时应向用户解释权限用途；
+- 如果用户勾选了“不再询问”选项，应引导用户去设置页手动开启权限。
+- 
+于是，引申出了复杂版的权限申请方法：
+## 自定义权限申请：
 ```
 PermissionUtils.checkPermission(mContext, PERMISSION_CAMERA,
                 new PermissionUtils.PermissionCheckCallBack() {
@@ -49,7 +52,7 @@ PermissionUtils.checkPermission(mContext, PERMISSION_CAMERA,
 
             @Override
             public void onUserHasAlreadyTurnedDown(String... permission) {
-                // 上一次申请权限被拒绝，可用于向用户说明权限原因
+                // 上一次申请权限被拒绝，可用于向用户说明权限原因，然后调用权限申请方法。
             }
 
             @Override
@@ -58,10 +61,10 @@ PermissionUtils.checkPermission(mContext, PERMISSION_CAMERA,
             }
         });
 ```
-###   onRequestPermissionsResult：
+#### 然后在onRequestPermissionsResult中：
 
 ```
- PermissionUtils.onRequestPermissionResult(mContext, PERMISSION_CAMERA, grantResults, new PermissionUtils.PermissionCheckCallBack() {
+PermissionUtils.onRequestPermissionResult(mContext, PERMISSION_CAMERA, grantResults, new PermissionUtils.PermissionCheckCallBack() {
                     @Override
                     public void onHasPermission() {
                         toCamera();
@@ -75,7 +78,7 @@ PermissionUtils.checkPermission(mContext, PERMISSION_CAMERA,
                     @Override
                     public void onUserHasAlreadyTurnedDownAndDontAsk(String... permission) {
                         Toast.makeText(mContext, "我们需要"+Arrays.toString(permission)+"权限", Toast.LENGTH_SHORT).show();
-                        // 前往应用权限设置界面
+                        // 显示前往设置页的dialog
                         showToAppSettingDialog();
                     }
                 });
