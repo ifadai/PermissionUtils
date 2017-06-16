@@ -9,7 +9,6 @@ import android.support.annotation.NonNull;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
-import android.widget.Button;
 import android.widget.Toast;
 
 import com.fadai.library.PermissionUtils;
@@ -18,13 +17,9 @@ import java.util.Arrays;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
-    private Button mBtnRequestOnePermission,mBtnRequestPermissions;
-
     private Context mContext;
-
-    // 相机权限
+    // 相机权限、多个权限
     private final String PERMISSION_CAMERA = Manifest.permission.CAMERA;
-
     private final String[] PERMISSIONS = new String[]{Manifest.permission.READ_EXTERNAL_STORAGE
             , Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.READ_CALENDAR};
 
@@ -36,32 +31,42 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         super.onCreate(savedInstanceState);
         mContext = this;
         setContentView(R.layout.activity_main);
-        initView();
-    }
-
-    private void initView() {
-        mBtnRequestOnePermission = (Button) findViewById(R.id.btn_main_request_one_permission);
-        mBtnRequestPermissions=(Button)findViewById(R.id.btn_main_request_permissions);
-
-        mBtnRequestOnePermission.setOnClickListener(this);
-        mBtnRequestPermissions.setOnClickListener(this);
     }
 
     @Override
     public void onClick(View v) {
         switch (v.getId()) {
             case R.id.btn_main_request_one_permission:
-                requestOnePermission();
+                requestPermission();
                 break;
             case R.id.btn_main_request_permissions:
-                requestPermissions();
+                requestMorePermissions();
+                break;
+            case R.id.btn_main_request_one_permission1:
+                requestPermission1();
+                break;
+            case R.id.btn_main_request_permissions1:
+                requestMorePermissions1();
                 break;
 
         }
     }
 
-    private void requestOnePermission(){
-        PermissionUtils.checkPermission(mContext, PERMISSION_CAMERA, new PermissionUtils.CheckPermissionCallBack() {
+    // 普通申请一个权限
+    private void requestPermission(){
+        PermissionUtils.checkAndRequestPermission(mContext, PERMISSION_CAMERA, REQUEST_CODE_CAMERA,
+                new PermissionUtils.PermissionRequestSuccessCallBack() {
+            @Override
+            public void onHasPermission() {
+                toCamera();
+            }
+        });
+    }
+
+    // 自定义申请一个权限
+    private void requestPermission1(){
+        PermissionUtils.checkPermission(mContext, PERMISSION_CAMERA,
+                new PermissionUtils.PermissionCheckCallBack() {
             @Override
             public void onHasPermission() {
                 toCamera();
@@ -69,7 +74,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
             @Override
             public void onUserHasAlreadyTurnedDown(String... permission) {
-                showExplainDialog();
+                showExplainDialog(permission, new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        PermissionUtils.requestPermission(mContext, PERMISSION_CAMERA, REQUEST_CODE_CAMERA);
+                    }
+                });
             }
 
             @Override
@@ -79,11 +89,38 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         });
     }
 
-    private void requestPermissions(){
-        PermissionUtils.checkAndRequestPermissions(mContext, PERMISSIONS, REQUEST_CODE_PERMISSIONS, new PermissionUtils.RequestPermissionsCallBack() {
+    // 普通申请多个权限
+    private void requestMorePermissions(){
+        PermissionUtils.checkAndRequestMorePermissions(mContext, PERMISSIONS, REQUEST_CODE_PERMISSIONS,
+                new PermissionUtils.PermissionRequestSuccessCallBack() {
             @Override
             public void onHasPermission() {
                 toCamera();
+            }
+        });
+    }
+
+    // 自定义申请多个权限
+    private void requestMorePermissions1(){
+        PermissionUtils.checkMorePermissions(mContext, PERMISSIONS, new PermissionUtils.PermissionCheckCallBack() {
+            @Override
+            public void onHasPermission() {
+                toCamera();
+            }
+
+            @Override
+            public void onUserHasAlreadyTurnedDown(String... permission) {
+                showExplainDialog(permission, new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        PermissionUtils.requestMorePermissions(mContext, PERMISSIONS, REQUEST_CODE_PERMISSIONS);
+                    }
+                });
+            }
+
+            @Override
+            public void onUserHasAlreadyTurnedDownAndDontAsk(String... permission) {
+                PermissionUtils.requestMorePermissions(mContext, PERMISSIONS, REQUEST_CODE_PERMISSIONS);
             }
         });
     }
@@ -94,29 +131,21 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         startActivity(intent);
     }
 
-
-
     /**
      * 解释权限的dialog
      *
-     * @describe
      */
-    private void showExplainDialog() {
+    private void showExplainDialog(String[] permission, DialogInterface.OnClickListener onClickListener) {
         new AlertDialog.Builder(mContext)
-                .setTitle("申请相机权限")
-                .setMessage("我们需要相机权限，才能实现拍照功能")
-                .setPositiveButton("确定", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        PermissionUtils.requestPermission(mContext, PERMISSION_CAMERA, REQUEST_CODE_CAMERA);
-                    }
-                }).show();
+                .setTitle("申请权限")
+                .setMessage("我们需要" + Arrays.toString(permission)+"权限")
+                .setPositiveButton("确定", onClickListener)
+                .show();
     }
 
     /**
      * 显示前往应用设置Dialog
      *
-     * @describe
      */
     private void showToAppSettingDialog() {
         new AlertDialog.Builder(mContext)
@@ -135,7 +164,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         switch (requestCode) {
             case REQUEST_CODE_CAMERA:
-                PermissionUtils.onRequestPermissionResult(mContext, PERMISSION_CAMERA, grantResults, new PermissionUtils.CheckPermissionCallBack() {
+                PermissionUtils.onRequestPermissionResult(mContext, PERMISSION_CAMERA, grantResults, new PermissionUtils.PermissionCheckCallBack() {
                     @Override
                     public void onHasPermission() {
                         toCamera();
@@ -154,7 +183,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 });
                 break;
             case REQUEST_CODE_PERMISSIONS:
-                PermissionUtils.onRequestPermissionsResult(mContext, PERMISSIONS, new PermissionUtils.CheckPermissionCallBack() {
+                PermissionUtils.onRequestMorePermissionsResult(mContext, PERMISSIONS, new PermissionUtils.PermissionCheckCallBack() {
                     @Override
                     public void onHasPermission() {
                         toCamera();

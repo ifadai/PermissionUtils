@@ -28,7 +28,6 @@ public class PermissionUtils {
      * 检测权限
      *
      * @return true：已授权； false：未授权；
-     * @describe
      */
     public static boolean checkPermission(Context context, String permission) {
         if (ContextCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED)
@@ -41,9 +40,8 @@ public class PermissionUtils {
      * 检测多个权限
      *
      * @return 未授权的权限
-     * @describe
      */
-    public static List<String> checkPermissions(Context context, String[] permissions) {
+    public static List<String> checkMorePermissions(Context context, String[] permissions) {
         List<String> permissionList = new ArrayList<>();
         for (int i = 0; i < permissions.length; i++) {
             if (!checkPermission(context, permissions[i]))
@@ -54,8 +52,6 @@ public class PermissionUtils {
 
     /**
      * 请求权限
-     *
-     * @describe
      */
     public static void requestPermission(Context context, String permission, int requestCode) {
         ActivityCompat.requestPermissions((Activity) context, new String[]{permission}, requestCode);
@@ -63,20 +59,16 @@ public class PermissionUtils {
 
     /**
      * 请求多个权限
-     *
-     * @describe
      */
-    public static void requestPermissions(Context context, List permissionList, int requestCode) {
+    public static void requestMorePermissions(Context context, List permissionList, int requestCode) {
         String[] permissions = (String[]) permissionList.toArray(new String[permissionList.size()]);
-        requestPermissions(context, permissions, requestCode);
+        requestMorePermissions(context, permissions, requestCode);
     }
 
     /**
      * 请求多个权限
-     *
-     * @describe
      */
-    public static void requestPermissions(Context context, String[] permissions, int requestCode) {
+    public static void requestMorePermissions(Context context, String[] permissions, int requestCode) {
         ActivityCompat.requestPermissions((Activity) context, permissions, requestCode);
     }
 
@@ -97,8 +89,6 @@ public class PermissionUtils {
 
     /**
      * 检测权限并请求权限：如果没有权限，则请求权限
-     *
-     * @describe
      */
     public static void checkAndRequestPermission(Context context, String permission, int requestCode) {
         if (!checkPermission(context, permission)) {
@@ -108,66 +98,82 @@ public class PermissionUtils {
 
     /**
      * 检测并请求多个权限
-     *
-     * @describe
      */
-    public static void checkAndRequestPermissions(Context context, String[] permissions, int requestCode) {
-        List<String> permissionList = checkPermissions(context, permissions);
-        requestPermissions(context, permissionList, requestCode);
+    public static void checkAndRequestMorePermissions(Context context, String[] permissions, int requestCode) {
+        List<String> permissionList = checkMorePermissions(context, permissions);
+        requestMorePermissions(context, permissionList, requestCode);
     }
+
 
     /**
      * 检测权限
-     * 通过回调方法，实现：已允许权限回调、用户之前已拒绝权限回调、用户第一次请求权限或之前已拒绝并勾选了不在询问选项的回调。
      *
-     * @describe
+     * @describe：具体实现由回调接口决定
      */
-    public static void checkPermission(Context context, String permission, CheckPermissionCallBack callBack) {
-        if (checkPermission(context, permission)) {
+    public static void checkPermission(Context context, String permission, PermissionCheckCallBack callBack) {
+        if (checkPermission(context, permission)) { // 用户已授予权限
             callBack.onHasPermission();
         } else {
-            if (judgePermission(context, permission))
+            if (judgePermission(context, permission))  // 用户之前已拒绝过权限申请
                 callBack.onUserHasAlreadyTurnedDown(permission);
-            else
+            else                                       // 用户之前已拒绝并勾选了不在询问、用户第一次申请权限。
                 callBack.onUserHasAlreadyTurnedDownAndDontAsk(permission);
         }
     }
 
     /**
-     * 检测并申请权限
-     * 通过回调方法，实现：已允许权限回调、用户之前已拒绝权限回调
+     * 检测多个权限
      *
-     * @describe
+     * @describe：具体实现由回调接口决定
      */
-    public static void checkAndRequestPermission(Context context, String permission, int requestCode, RequestPermissionCallBack callBack) {
-        if (checkPermission(context, permission)) {
+    public static void checkMorePermissions(Context context, String[] permissions, PermissionCheckCallBack callBack) {
+        List<String> permissionList = checkMorePermissions(context, permissions);
+        if (permissionList.size() == 0) {  // 用户已授予权限
             callBack.onHasPermission();
         } else {
-            if (judgePermission(context, permission))
-                callBack.onUserHasAlreadyTurnedDown(permission);
-            else
-                requestPermission(context, permission, requestCode);
+            boolean isFirst = true;
+            for (int i = 0; i < permissionList.size(); i++) {
+                String permission = permissionList.get(i);
+                if (judgePermission(context, permission)) {
+                    isFirst = false;
+                    break;
+                }
+            }
+            String[] unauthorizedMorePermissions = (String[]) permissionList.toArray(new String[permissionList.size()]);
+            if (isFirst)// 用户之前已拒绝过权限申请
+                callBack.onUserHasAlreadyTurnedDownAndDontAsk(unauthorizedMorePermissions);
+            else       // 用户之前已拒绝并勾选了不在询问、用户第一次申请权限。
+                callBack.onUserHasAlreadyTurnedDown(unauthorizedMorePermissions);
+
+        }
+    }
+
+
+    /**
+     * 检测并申请权限
+     */
+    public static void checkAndRequestPermission(Context context, String permission, int requestCode, PermissionRequestSuccessCallBack callBack) {
+        if (checkPermission(context, permission)) {// 用户已授予权限
+            callBack.onHasPermission();
+        } else {
+            requestPermission(context, permission, requestCode);
         }
     }
 
     /**
      * 检测并申请多个权限
-     *
-     * @describe
      */
-    public static void checkAndRequestPermissions(Context context, String[] permissions, int requestCode, RequestPermissionsCallBack callBack) {
-        List<String> permissionList = checkPermissions(context, permissions);
-        if (permissionList.size() == 0) {
+    public static void checkAndRequestMorePermissions(Context context, String[] permissions, int requestCode, PermissionRequestSuccessCallBack callBack) {
+        List<String> permissionList = checkMorePermissions(context, permissions);
+        if (permissionList.size() == 0) {  // 用户已授予权限
             callBack.onHasPermission();
         } else {
-            requestPermissions(context, permissionList, requestCode);
+            requestMorePermissions(context, permissionList, requestCode);
         }
     }
 
     /**
      * 判断权限是否申请成功
-     *
-     * @describe
      */
     public static boolean isPermissionRequestSuccess(int[] grantResults) {
         if (grantResults.length > 0
@@ -179,10 +185,8 @@ public class PermissionUtils {
 
     /**
      * 用户申请权限返回
-     *
-     * @describe
      */
-    public static void onRequestPermissionResult(Context context, String permission, int[] grantResults, CheckPermissionCallBack callback) {
+    public static void onRequestPermissionResult(Context context, String permission, int[] grantResults, PermissionCheckCallBack callback) {
         if (PermissionUtils.isPermissionRequestSuccess(grantResults)) {
             callback.onHasPermission();
         } else {
@@ -196,12 +200,10 @@ public class PermissionUtils {
 
     /**
      * 用户申请多个权限返回
-     *
-     * @describe
      */
-    public static void onRequestPermissionsResult(Context context, String[] permissions, CheckPermissionCallBack callback) {
+    public static void onRequestMorePermissionsResult(Context context, String[] permissions, PermissionCheckCallBack callback) {
         boolean isBannedPermission = false;
-        List<String> permissionList = checkPermissions(context, permissions);
+        List<String> permissionList = checkMorePermissions(context, permissions);
         if (permissionList.size() == 0)
             callback.onHasPermission();
         else {
@@ -238,28 +240,15 @@ public class PermissionUtils {
         context.startActivity(intent);
     }
 
-    public interface RequestPermissionsCallBack {
+    public interface PermissionRequestSuccessCallBack {
         /**
          * 用户已授予权限
          */
         void onHasPermission();
     }
 
-    public interface RequestPermissionCallBack {
-        /**
-         * 用户已授予权限
-         */
-        void onHasPermission();
 
-        /**
-         * 用户已拒绝过权限
-         *
-         * @param permission:被拒绝的权限
-         */
-        void onUserHasAlreadyTurnedDown(String... permission);
-    }
-
-    public interface CheckPermissionCallBack {
+    public interface PermissionCheckCallBack {
 
         /**
          * 用户已授予权限
