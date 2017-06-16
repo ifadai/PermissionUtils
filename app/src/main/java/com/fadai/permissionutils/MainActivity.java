@@ -14,20 +14,22 @@ import android.widget.Toast;
 
 import com.fadai.library.PermissionUtils;
 
+import java.util.Arrays;
+
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
-    private Button mBtnToCamare;
+    private Button mBtnRequestOnePermission,mBtnRequestPermissions;
 
     private Context mContext;
 
-
-
     // 相机权限
-    private final String CAMERA_PERMISSION = Manifest.permission.CAMERA;
+    private final String PERMISSION_CAMERA = Manifest.permission.CAMERA;
 
-    // 打开相机请求Code
-    private final int REQUEST_CODE_CAMERA = 1;
+    private final String[] PERMISSIONS = new String[]{Manifest.permission.READ_EXTERNAL_STORAGE
+            , Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.READ_CALENDAR};
 
+    // 打开相机请求Code，多个权限请求Code
+    private final int REQUEST_CODE_CAMERA = 1,REQUEST_CODE_PERMISSIONS=2;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -35,60 +37,55 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         mContext = this;
         setContentView(R.layout.activity_main);
         initView();
-
     }
 
     private void initView() {
-        mBtnToCamare = (Button) findViewById(R.id.btn_main_camera);
-        mBtnToCamare.setOnClickListener(this);
+        mBtnRequestOnePermission = (Button) findViewById(R.id.btn_main_request_one_permission);
+        mBtnRequestPermissions=(Button)findViewById(R.id.btn_main_request_permissions);
+
+        mBtnRequestOnePermission.setOnClickListener(this);
+        mBtnRequestPermissions.setOnClickListener(this);
     }
 
     @Override
     public void onClick(View v) {
         switch (v.getId()) {
-            case R.id.btn_main_camera:
-                PermissionUtils.checkPermission(mContext, CAMERA_PERMISSION, new PermissionUtils.RequestPermissionCallBack() {
-                    @Override
-                    public void onHasPermission() {
-                        toCamera();
-                    }
-
-                    @Override
-                    public void onUserHasAlreadyTurnedDown() {
-                        showExplainDialog();
-                    }
-
-                    @Override
-                    public void onUserHasAlreadyTurnedDownAndDontAsk() {
-                        PermissionUtils.requestPermission(mContext,CAMERA_PERMISSION,REQUEST_CODE_CAMERA);
-                    }
-                });
+            case R.id.btn_main_request_one_permission:
+                requestOnePermission();
                 break;
+            case R.id.btn_main_request_permissions:
+                requestPermissions();
+                break;
+
         }
     }
 
-    @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        switch (requestCode) {
-            case REQUEST_CODE_CAMERA:
-                PermissionUtils.onRequestPermissionResult(mContext, CAMERA_PERMISSION, grantResults, new PermissionUtils.RequestPermissionCallBack() {
-                    @Override
-                    public void onHasPermission() {
-                        toCamera();
-                    }
+    private void requestOnePermission(){
+        PermissionUtils.checkPermission(mContext, PERMISSION_CAMERA, new PermissionUtils.CheckPermissionCallBack() {
+            @Override
+            public void onHasPermission() {
+                toCamera();
+            }
 
-                    @Override
-                    public void onUserHasAlreadyTurnedDown() {
-                        Toast.makeText(mContext, "我们需要相机权限", Toast.LENGTH_SHORT).show();
-                    }
+            @Override
+            public void onUserHasAlreadyTurnedDown(String... permission) {
+                showExplainDialog();
+            }
 
-                    @Override
-                    public void onUserHasAlreadyTurnedDownAndDontAsk() {
-                        showToAppSettingDialog();
-                    }
-                });
+            @Override
+            public void onUserHasAlreadyTurnedDownAndDontAsk(String... permission) {
+                PermissionUtils.requestPermission(mContext, PERMISSION_CAMERA, REQUEST_CODE_CAMERA);
+            }
+        });
+    }
 
-        }
+    private void requestPermissions(){
+        PermissionUtils.checkAndRequestPermissions(mContext, PERMISSIONS, REQUEST_CODE_PERMISSIONS, new PermissionUtils.RequestPermissionsCallBack() {
+            @Override
+            public void onHasPermission() {
+                toCamera();
+            }
+        });
     }
 
     private void toCamera() {
@@ -96,6 +93,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         intent.setAction("android.media.action.STILL_IMAGE_CAMERA");
         startActivity(intent);
     }
+
+
 
     /**
      * 解释权限的dialog
@@ -109,7 +108,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 .setPositiveButton("确定", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
-                        PermissionUtils.requestPermission(mContext, CAMERA_PERMISSION, REQUEST_CODE_CAMERA);
+                        PermissionUtils.requestPermission(mContext, PERMISSION_CAMERA, REQUEST_CODE_CAMERA);
                     }
                 }).show();
     }
@@ -121,8 +120,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
      */
     private void showToAppSettingDialog() {
         new AlertDialog.Builder(mContext)
-                .setTitle("需要相机权限")
-                .setMessage("我们需要相机权限，才能实现拍照功能，点击前往，将转到应用的设置界面，请开启应用的相机权限。")
+                .setTitle("需要权限")
+                .setMessage("我们需要相关权限，才能实现功能，点击前往，将转到应用的设置界面，请开启应用的相关权限。")
                 .setPositiveButton("前往", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
@@ -130,6 +129,51 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     }
                 })
                 .setNegativeButton("取消", null).show();
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        switch (requestCode) {
+            case REQUEST_CODE_CAMERA:
+                PermissionUtils.onRequestPermissionResult(mContext, PERMISSION_CAMERA, grantResults, new PermissionUtils.CheckPermissionCallBack() {
+                    @Override
+                    public void onHasPermission() {
+                        toCamera();
+                    }
+
+                    @Override
+                    public void onUserHasAlreadyTurnedDown(String... permission) {
+                        Toast.makeText(mContext, "我们需要"+Arrays.toString(permission)+"权限", Toast.LENGTH_SHORT).show();
+                    }
+
+                    @Override
+                    public void onUserHasAlreadyTurnedDownAndDontAsk(String... permission) {
+                        Toast.makeText(mContext, "我们需要"+Arrays.toString(permission)+"权限", Toast.LENGTH_SHORT).show();
+                        showToAppSettingDialog();
+                    }
+                });
+                break;
+            case REQUEST_CODE_PERMISSIONS:
+                PermissionUtils.onRequestPermissionsResult(mContext, PERMISSIONS, new PermissionUtils.CheckPermissionCallBack() {
+                    @Override
+                    public void onHasPermission() {
+                        toCamera();
+                    }
+
+                    @Override
+                    public void onUserHasAlreadyTurnedDown(String... permission) {
+                        Toast.makeText(mContext, "我们需要"+Arrays.toString(permission)+"权限", Toast.LENGTH_SHORT).show();
+                    }
+
+                    @Override
+                    public void onUserHasAlreadyTurnedDownAndDontAsk(String... permission) {
+                        Toast.makeText(mContext, "我们需要"+ Arrays.toString(permission)+"权限", Toast.LENGTH_SHORT).show();
+                        showToAppSettingDialog();
+                    }
+                });
+
+
+        }
     }
 
 

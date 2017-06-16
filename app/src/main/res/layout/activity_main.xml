@@ -4,16 +4,39 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context="com.fadai.permissionutils.MainActivity">
+    tools:context="com.fadai.permissionutils.MainActivity"
+    tools:layout_editor_absoluteY="81dp"
+    tools:layout_editor_absoluteX="0dp">
 
     <Button
-        android:id="@+id/btn_main_camera"
+        android:id="@+id/btn_main_request_one_permission"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="申请权限"
-        app:layout_constraintBottom_toBottomOf="parent"
+        android:text="申请一个权限"
+        android:layout_marginEnd="8dp"
+        android:layout_marginLeft="0dp"
         app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toTopOf="@+id/guideline3"
+        android:layout_marginTop="24dp"
+        android:layout_marginRight="8dp"
+        app:layout_constraintRight_toRightOf="parent" />
+    <Button
+        android:id="@+id/btn_main_request_permissions"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="申请多个权限"
+        android:layout_marginBottom="24dp"
+        app:layout_constraintBottom_toTopOf="@+id/guideline3"
+        android:layout_marginLeft="8dp"
+        app:layout_constraintLeft_toLeftOf="parent"
+        android:layout_marginRight="8dp"
+        app:layout_constraintRight_toRightOf="parent" />
+
+    <android.support.constraint.Guideline
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/guideline3"
+        android:orientation="horizontal"
+        app:layout_constraintGuide_percent="0.5" />
 
 </android.support.constraint.ConstraintLayout>
